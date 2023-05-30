@@ -1,11 +1,118 @@
 #Predictive Analytics README
 #project was collaborated on with Rob Sisto and Angelos Vasilopoulos.
 
-4124
-qwd
-q
-d
-qwd
-q
-dq
-d
+
+I. Introduction
+The Spaceship Titanic was an "interstellar passenger liner" with about 13
+thousand voyagers traveling to various "newly habitable exoplanets" in surrounding star
+systems. The spaceship "collided with a spacetime anomaly" that caused half of the
+ship's passengers to be transported to an alternate dimension. Here we predict
+transportation of the passengers on the Spaceship Titanic to an alternate dimension
+using 13 given variables and several derived variables (Tables 1 and 2).
+
+
+
+II. Methods
+
+  i. Variable derivation
+  We derive several variables from the original data: passenger gender, room side,
+  room deck, and a boolean of whether or not a passenger was on board with family.
+  The gender variable is derived using the “gender” package, available on
+  Comprehensive R Archive Network (CRAN). This package infers passenger gender by
+  comparing passenger name to various name-gender databases [2].
+  The room side and deck variables are derived by splitting the cabin variable, the first
+  letter of each character in the column representing deck and the last representing side.
+  Passengers are marked as being on board with family if they had the same last
+  name and the same first four passenger identifier digits as another passenger in the
+  dataset.
+
+
+  ii. Missing value imputation
+  We impute missing values using the “Amelia” package, also available on CRAN.
+  Amelia utilizes a “bootstrapped-based algorithm” that returns results similar to those of
+  the standard IP and EMis approaches [1].
+  iii. Modeling
+  We predict transportation by logistic regression, k-nearest neighbors (KNN), random
+  forest, least absolute shrinkage and selection operator (LASSO) regression, extreme
+  gradient boosting (XGBoost), and a support vector machine (SVM) with a linear kernel.
+  Some model hyperparameters are tuned by five-fold cross validation: number of
+  neighbors k for kNN, number of variables randomly sampled mtry and nodesize for
+  random forest, shrinkage coefficient λ for LASSO regression, number of rounds
+  nrounds, tree depth max.depth, and learning rate eta for XGBoost, and kernel shape
+  and cost for SVM the cost parameter, as well as a set of gamma parameters (linear
+  performed best of all).
+  Data was scaled for KNN and LASSO regression. We measure model performance
+  as prediction accuracy using k-fold cross validation, with 5 folds being used.
+  
+  
+  
+III. Results
+Not all of the derived variables were useful. For example, information on gender and
+whether a passenger was traveling with family had limited predictive utility in the
+random forest model (Figure 1).
+Using given and derived variables (Tables 1 and 2), we tuned models to determine
+optimal hyperparameters (Table 3). The random forest model outperformed all other
+models in terms of accuracy, with accuracy of 0.8011046. When submitting our models,
+indeed the random forest model had an accuracy of .77671, our KNN model had an
+accuracy of .77624, and lastly our SVM model had an accuracy of .77647. Overall, the
+models appeared to have very similar scores, leading to believe that better data
+derivation could’ve led to higher predictions.
+
+
+
+
+Table 1. Given variables: variables used for modeling, with descriptions and attributes
+Variable Description Levels/Range
+PassengerId Passenger identifier Unique
+HomePlanet Passenger home planet Levels: Earth, Europa, Mars
+CryoSleep Passenger cryosleep status Levels: True, False
+Destination Passenger destination Levels: 55 Cancri e, PSO
+J318.5-22, TRAPPIST-1
+Age Passenger age Range: 0 - 79
+VIP Passenger VIP status Levels: True, False
+RoomService Amount spent on room service Range: 0 - 14,327
+FoodCourt Amount spent at food court Range: 0 - 29,813
+ShoppingMall Amount spent at shopping mall Range: 0 - 23,492
+Spa Amount spent at spa Range: 0 - 22,408
+VRDeck Amount spent at virtual reality
+deck
+Range: 0 - 24,133
+Variable Description Levels/Range
+Cabin Passenger cabin number Unique
+Name Passenger name Unique
+
+
+Table 2. Derived variables: variables derived from given variables with attributes
+Variable Description Levels/Range
+Gender Passenger gender Levels: Male, Female
+Side Passenger cabin side Levels: P(ort), S(tarboard)
+Deck Passenger cabin deck Levels: True, False
+ActualFamily Whether passenger was on
+board with family
+Levels: 0 (alone), 1 (with
+family)
+
+
+Table 3. Performance results and model optimal hyperparameters
+Model Hyperparameter Optimal value Accuracy
+Logistic regression NA NA 0.7855742
+kNN k 35 0.780053
+LASSO regression λ 0.01 0.7778672
+randomForest mtry nodesize 3 3 0.8011046
+XGBoost nrounds max.depth eta 10 5 2.154435e-01 0.7947768
+SVM kernel cost Linear 0.6 0.7791312
+
+
+
+IV. Conclusions
+In terms of accuracy, random forest was the most successful in predicting
+transportation to another dimension. This suggests that there are non-linear
+relationships in the data that linear methods (e.g., logistic regression, LASSO
+regression) do not account for. Further analysis should include uncertainty
+measurement by bootstrapping and variable selection, for example, by model-wise
+calculation of permutation feature importance. Variable subsets may provide more
+accurate predictions. As such, our best model predictions would be derived from the
+random forest model. Additionally, any future work would also consist of properly
+identifying the socio-economic status of this spaceship, to better identify how the
+predictors can interact with one another.
+
