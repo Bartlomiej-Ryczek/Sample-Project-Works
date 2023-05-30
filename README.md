@@ -1,0 +1,60 @@
+# 307
+This project was worked on in collaboration with Angelos Vasilopoulos.
+Goal of this project was to determine if there was a difference or change in political ideology amongst college students as they matured through the college experience.
+Main two factors that we obsereved were the individual's grade level and sex.
+
+
+Population consisted of LUC students that were on campus
+Data collection occurred in the Damen Student Center, on Tuesday and Thursday from 11:30 A.M. till 2:20 P.M.
+
+Randomization occurred at 2 stages of the study:
+Subject selection: individuals would be randomly approached in the Damen student center 
+Avoided taking multiple samples from potential friend groups as this could break independence
+Observations were live subjects; had to be respectful of an individual’s wish to not take the survey
+
+Replicate selection: from the pool of available replicates, 3 were randomly selected for each paired level of sex and grade level
+Factorial calls for CRD randomization across the entire experiment
+Randomly chose replicate for each sex and grade (similar to blocking randomization)
+Even number of replicates, but uneven replicate pools due to sampling 
+
+
+Equation form: yijk = µ + τi + βj + (τβ)ij + εijk
+µ = overall effect, τ = grade level at i’th level, β = sex at j’th level, e = error at i and j’th level of the k’th replicate
+i = 1, 2, 3, 4, 5	|	j = 1, 2	|	k = 1, 2, 3
+Assumptions: 
+2 fixed effects; sum of these effects and interaction is 0
+Normality and constant variance within the error term
+Normal, Homoscedastic, I.I.D. 
+Response y:
+Score: an individual’s level of conservatism as a whole
+Inverted the individual scores of abortion, immigration, welfare benefits, tax, etc…
+X -> (110 - X)
+Average of the individuals’ scores 
+
+
+Since sex was significant; also subsetted to see how it compared for each year; was significant at every year EXCEPT for grad students
+Due to lower sampling pool for graduate students.
+
+We also created a penalized regression model that would do variable selection on the interactions of the base variables and the additional variables
+Allows the user to estimate an individual’s score given a set of information (for example, a person’s sex and their view of abortion) 
+Used Polyserial and Biserial correlations to obtain initial variables.
+
+
+With variables GPA, major, and location included, the following effects are significant:
+Sex
+Year
+Location (marginally)
+Interaction of sex and religion
+As expected, most score components significantly affected mean ideology score
+Welfare benefits, while strongly correlated with sex, did not signficialty affect mean ideology score
+Interestingly, although abortion and sex were relatively strongly correlated, their interaction did not significantly affect mean ideology score
+
+
+Conclusions:
+Sex was a relevant indicator in explaining the average score of an individual while the year of the individual was not
+It many cases, it appears that men are on average more conservative than women
+When other variables are included in the model, other variables that previously weren’t significant became significant
+
+
+
+
