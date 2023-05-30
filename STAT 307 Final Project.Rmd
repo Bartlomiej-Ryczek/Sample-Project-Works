@@ -1,0 +1,845 @@
+---
+title: "STAT 307 FINAL KNN"
+author: "Bart Ryczek"
+date: '2022-11-23'
+output: pdf_document
+---
+#Factorial Anova
+
+```{r}
+Political...Factorial.Set <- read.csv("C:/Users/Bart/Downloads/Political - Factorial Set.csv")
+library(agricolae)
+library(MASS)
+library(car)
+library(rcompanion)
+library(glmnet)
+```
+
+```{r}
+year1MF <-c(61.42857143, 65.00, 58.57, 38.57, 37.14, 34.29)
+year2MF <-c(49.29, 59.29, 67.85714286, 50.71, 55.71, 61.43)
+year3MF <-c(85.00, 72.14, 82.14, 33.57, 51.43, 47.86)
+year4MF <-c(65.71, 68.57, 66.43, 59.29, 35.71, 44.29)
+yearGMF <-c(45.71, 57.14, 58.57, 51.43, 47.14, 45.71)
+
+
+#ordering into row
+y <- c(year1MF, year2MF, year3MF, year4MF, yearGMF)
+y
+
+#treatment sex
+treatmentsex <- as.factor(rep(1:2, each= 3, time=5))
+treatmentsex
+
+#treatment year
+treatmentyr <- as.factor(rep(1:5, each= 6))
+treatmentyr
+
+
+#glimpse
+par(mfrow=c(1,2)) # A 1 by 2 panel of plots
+boxplot(y~treatmentsex, xlab="sex")
+boxplot(y~treatmentyr, xlab="year")
+
+#glimpse 2
+dataq <- data.frame(y, treatmentsex,treatmentyr)
+
+interaction.plot(treatmentsex,treatmentyr,y)
+interaction.plot(treatmentyr,treatmentsex,y)
+
+
+#anova
+g <- lm(y~(treatmentsex*treatmentyr))
+anova(g)
+
+
+#assumptions
+shapiro.test(g$residuals)
+
+#homoscedasticity
+#ggaov<-aov(y~treatmentsex*treatmentyr)
+bartlett.test(ggaov$residuals~treatmentsex)
+bartlett.test(ggaov$residuals~treatmentyr)
+
+#model diagnostic
+#plot(g)
+
+#subsetting for levels of method lvl 1 = 1
+#small<-subset(dataq,dataq$treatmentsex==1)
+#TukeyHSD(aov(small$y~small$treatmentyr), conf.level=0.95)
+
+#subsetting for levels of method lvl 1 = 2
+#small2<-subset(dataq,dataq$treatmentsex==2)
+#TukeyHSD(aov(small2$y~small2$treatmentyr), conf.level=0.95)
+```
+#NEW CODE
+```{r}
+data<-read.csv("C:/Users/Bart/Downloads/Political - KNN Set.csv")
+head(data)
+
+
+#under repeated sampling interaction was not significant as many times as the 
+#sex 
+set.seed(2000)
+
+sample(1:10, replace=FALSE)
+trt = c("M1","M2","M3","M4","MG","F1","F2","F3","F4","FG")
+
+m1<-data[sample(which(data$SEX=="Male"&data$YEAR==0),3),]
+m2<-data[sample(which(data$SEX=="Male"&data$YEAR==1),3),]
+m3<-data[sample(which(data$SEX=="Male"&data$YEAR==2),3),]
+m4<-data[sample(which(data$SEX=="Male"&data$YEAR==3),3),]
+mg<-data[sample(which(data$SEX=="Male"&data$YEAR==4),3),]
+
+f1<-data[sample(which(data$SEX=="Female"&data$YEAR==0),3),]
+f2<-data[sample(which(data$SEX=="Female"&data$YEAR==1),3),]
+f3<-data[sample(which(data$SEX=="Female"&data$YEAR==2),3),]
+f4<-data[sample(which(data$SEX=="Female"&data$YEAR==3),3),]
+fg<-data[sample(which(data$SEX=="Female"&data$YEAR==4),3),]
+
+table<-rbind(m1,f1,m2,f2,m3,f3,m4,f4,mg,fg)
+
+table$SEX <- as.factor(table$SEX)
+
+model<-lm(SCORE~as.factor(YEAR)*as.factor(SEX),data=table)
+anova(model)
+
+
+model<-lm(SCORE~as.factor(YEAR)+A*SEX,data=table)
+anova(model)
+
+
+TukeyHSD(aov(data$SCORE~data$SEX), conf.level=0.95)
+
+
+
+
+interaction.plot(data$SEX,data$YEAR,data$SCORE)
+interaction.plot(data$YEAR,data$SEX,data$SCORE)
+
+
+
+
+shapiro.test(model$residuals)
+
+ggaov <- aov(SCORE ~ data$YEAR * data$SEX, data=data)
+#homoscedasticity
+bartlett.test(ggaov$residuals~data$YEAR)
+bartlett.test(ggaov$residuals~data$SEX)
+
+
+
+
+#subsetting for female first
+#small<-subset(data,data$SEX=="Female")
+#TukeyHSD(aov(small$SCORE~as.factor(small$YEAR)), conf.level=0.95)
+
+#subsetting for male second
+#small<-subset(data,data$SEX=="Male")
+#TukeyHSD(aov(small$SCORE~as.factor(small$YEAR)), conf.level=0.95)
+
+
+
+
+
+
+#subsetting for female first
+small<-subset(data,data$YEAR==1)
+TukeyHSD(aov(small$SCORE~as.factor(small$SEX)), conf.level=0.95)
+
+#subsetting for male second
+small<-subset(data,data$YEAR==2)
+TukeyHSD(aov(small$SCORE~as.factor(small$SEX)), conf.level=0.95)
+
+#subsetting for male second
+small<-subset(data,data$YEAR==3)
+TukeyHSD(aov(small$SCORE~as.factor(small$SEX)), conf.level=0.95)
+
+#subsetting for male second
+small<-subset(data,data$YEAR==4)
+TukeyHSD(aov(small$SCORE~as.factor(small$SEX)), conf.level=0.95)
+
+#subsetting for male second
+small<-subset(data,data$YEAR==0)
+TukeyHSD(aov(small$SCORE~as.factor(small$SEX)), conf.level=0.95)
+
+mat_dat <- as.matrix(data)
+
+###OLD CODE BELOW ###
+#table<-rbind(m1,f1,m2,f2,m3,f3,m4,f4,mg,fg)
+#model<-lm(score~as.factor(year)*as.factor(sex),data=table)
+#anova(model)
+
+#shapiro.test(model$residuals)
+#qqnorm(model$residuals)
+#qqline(model$residuals)
+
+#bartlett.test(model$residuals~table$year)
+#bartlett.test(model$residuals~table$sex)
+#plot(as.factor(table$year),model$residuals)
+#plot(as.factor(table$sex),model$residuals)
+```
+
+
+
+#USING VALIDATION SET APPROACH
+```{r}
+PoliticalKNN <- read.csv("C:/Users/Bart/Downloads/Political - KNN Set.csv")
+
+
+Elite <- rep("No", nrow(PoliticalKNN))
+Elite[PoliticalKNN$SCORE > 52] <- "Yes"
+Elite <- as.factor(Elite)
+PoliticalKNN <- data.frame(PoliticalKNN, Elite)
+
+
+#PoliticalKNN <- subset(PoliticalKNN, select=c( A,I,WB,T,TV,FU,MNS,R,B,TM,FR,P,GO,LG,GPA,SEX,YEAR,Elite))
+
+PoliticalKNN$SEX<-ifelse(PoliticalKNN$SEX=="Male",1,0)
+
+
+
+PoliticalKNN$SEX <- as.factor(PoliticalKNN$SEX)
+PoliticalKNN$YEAR <- as.factor(PoliticalKNN$YEAR)
+#PoliticalKNN$A <- as.factor(PoliticalKNN$A)
+#PoliticalKNN$I <- as.factor(PoliticalKNN$I)
+#PoliticalKNN$WB <- as.factor(PoliticalKNN$WB)
+#PoliticalKNN$T <- as.factor(PoliticalKNN$T)
+#PoliticalKNN$TV <- as.factor(PoliticalKNN$TV)
+#PoliticalKNN$FU <- as.factor(PoliticalKNN$FU)
+#PoliticalKNN$MNS <- as.factor(PoliticalKNN$MNS)
+#PoliticalKNN$R <- as.factor(PoliticalKNN$R)
+#PoliticalKNN$B <- as.factor(PoliticalKNN$B)
+#PoliticalKNN$TM <- as.factor(PoliticalKNN$TM)
+#PoliticalKNN$FR <- as.factor(PoliticalKNN$FR)
+#PoliticalKNN$P <- as.factor(PoliticalKNN$P)
+#PoliticalKNN$GO <- as.factor(PoliticalKNN$GO)
+#PoliticalKNN$LG <- as.factor(PoliticalKNN$LG)
+PoliticalKNN$LOCATION <- as.factor(PoliticalKNN$LOCATION)
+PoliticalKNN$MAJOR <- as.factor(PoliticalKNN$MAJOR)
+
+
+#PoliticalKNN$LOCATION <- as.factor(PoliticalKNN$LOCATION)
+
+#PoliticalKNN$MAJOR <- as.factor(PoliticalKNN$MAJOR)
+```
+
+Note:
+Abortion = A
+Immigration = I
+Welfare Benefits = WB
+Tax = T
+Traditional values = TV
+Family unit = FU
+Military and national sec= MNS
+Religion = R
+Business = B
+Traditional Marriage = TM
+Fiscal Responsability = FR
+Patriotism = P
+Gun ownership = GO
+Limited Government = LG
+_______________________________
+
+Year in school  = Year
+
+First - 0
+Second - 1
+Third - 2
+Fourth - 3
+Grad - 4
+
+_______________________________
+Sex = SEX
+Male - 1 
+Female - 0
+#DONE IN R NOT INHERENT TO CSV FILE
+
+
+_______________________________
+
+Where they lived = LOCATION
+0 - midwest
+1 - West
+2 - northeast
+3 - south
+4 - outside US
+
+_______________________________
+Major 
+STEM - 0
+Social Sciences - 1
+Business - 2
+Arts - 3
+
+Unique combinations listed with own levels:
+
+STEM BUSINESS - 4
+STEM ART - 5
+STEM SOC - 6
+BUSINESS SOC - 7
+
+_______________________________
+Score = SCORE
+Buckets of score set at median
+
+Grades = GPA, continous
+
+
+
+
+
+
+##Variable selection
+```{r}
+#should we scale this data?
+#Poli2 <- subset(Poli2, select = -c(SCORE))
+PoliticalKNN$GPA <- as.data.frame(scale(PoliticalKNN$GPA))
+PoliticalKNN$GPA <- unlist(PoliticalKNN$GPA)
+
+
+
+x <- model.matrix(SCORE ~ GPA + SEX + YEAR + LOCATION+MAJOR+A:SEX+WB:SEX+TV:SEX+MNS:SEX+R:SEX+TM:SEX+P:SEX+GO:SEX + LG:SEX + LG:YEAR, PoliticalKNN)
+y <- PoliticalKNN$SCORE
+
+
+grid <- 10^ seq(10, -2, length = 100)
+
+
+
+lasso.mod <- glmnet(x, y, alpha = 1,
+lambda = grid)
+
+plot(lasso.mod)
+
+#shall now compute cross validation and compute test error
+cv.out <- cv.glmnet(x, y, alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+
+
+
+
+#lasso.pred <- predict(lasso.mod, s = bestlam, newx = x[test, ])
+#mean((lasso.pred - y.test)^2)
+
+#look to see our model after lasso
+
+out <- glmnet(x, y, alpha = 1, lambda = bestlam)
+lasso.coef <- predict(out, type = "coefficients",s = bestlam)
+lasso.coef
+
+
+newmod <- lm(y~PoliticalKNN$GPA+PoliticalKNN$LOCATION*PoliticalKNN$LG+)
+```
+
+
+
+##correlation division for SEX
+```{r}
+#create matrix for whichever factors you want to check
+
+#results:Sex and abortion are correlated -> Cramer V of 0.6783 which is the alternate r^2 value
+
+sub1 <- subset(PoliticalKNN$LG,PoliticalKNN$SEX == "1")
+sub2 <- subset(PoliticalKNN$LG,PoliticalKNN$SEX == "0")
+
+#issue as other cors dont treat these as categorical, and carmer V is issue as the data is uneven
+
+length(sub1[sub1==10])
+length(sub1[sub1==20])
+length(sub1[sub1==30])
+length(sub1[sub1==40])
+length(sub1[sub1==50])
+length(sub1[sub1==60])
+length(sub1[sub1==70])
+length(sub1[sub1==80])
+length(sub1[sub1==90])
+length(sub1[sub1==100])
+
+man1 <- sum(length(sub1[sub1==10]), length(sub1[sub1==20]), length(sub1[sub1==30]))
+man2 <- sum(length(sub1[sub1==40]), length(sub1[sub1==50]), length(sub1[sub1==60]), length(sub1[sub1==70]))
+man3 <- sum(length(sub1[sub1==80]), length(sub1[sub1==90]), length(sub1[sub1==100]))
+
+length(sub2[sub2==10])
+length(sub2[sub2==20])
+length(sub2[sub2==30])
+length(sub2[sub2==40])
+length(sub2[sub2==50])
+length(sub2[sub2==60])
+length(sub2[sub2==70])
+length(sub2[sub2==80])
+length(sub2[sub2==90])
+length(sub2[sub2==100])
+
+woman1 <- sum(length(sub2[sub2==10]), length(sub2[sub2==20]), length(sub2[sub2==30]))
+woman2 <- sum(length(sub2[sub2==40]), length(sub2[sub2==50]), length(sub2[sub2==60]), length(sub2[sub2==70]))
+woman3 <- sum(length(sub2[sub2==80]), length(sub2[sub2==90]), length(sub2[sub2==100]))
+
+man <- c(man1, man2, man3)
+women <-c(woman1, woman2, woman3)
+
+
+data2 <- rbind(man, women)
+
+#view table
+data2
+
+#calculate Cramer's V
+cramer5<-cramerV(data2)
+
+cramer5
+
+#list of cramer V scores
+#can include sex and abortion interaction -> cramer V .5663
+#not i ->   0.2503 
+#maybe include sex and wb -> 0.4576
+#not t -> 0.1266 
+#maybe tv -> 0.3914
+#FU -> 0.2025
+#MNS -> 0.3722 
+#R -> 0.3418 
+#B -> 0.3836
+#tm -> 0.2553
+#fr -> 0.1045
+#p -> 0.4315
+#go -> 0.4123 
+#lg -> 0.213
+```
+
+
+##correlation division for LOCATION
+```{r}
+
+#Where they lived = LOCATION
+#0 - midwest
+#1 - West
+#2 - northeast
+#3 - south
+#4 - outside US
+
+sub1 <- subset(PoliticalKNN$GO,PoliticalKNN$LOCATION == "0")
+sub2 <- subset(PoliticalKNN$GO,PoliticalKNN$LOCATION == "1")
+sub3 <- subset(PoliticalKNN$GO,PoliticalKNN$LOCATION == "2")
+sub4 <- subset(PoliticalKNN$GO,PoliticalKNN$LOCATION == "4")
+
+
+
+length(sub1[sub1==10])
+length(sub1[sub1==20])
+length(sub1[sub1==30])
+length(sub1[sub1==40])
+length(sub1[sub1==50])
+length(sub1[sub1==60])
+length(sub1[sub1==70])
+length(sub1[sub1==80])
+length(sub1[sub1==90])
+length(sub1[sub1==100])
+
+midwest1 <- sum(length(sub1[sub1==10]), length(sub1[sub1==20]), length(sub1[sub1==30]))
+midwest2 <- sum(length(sub1[sub1==40]), length(sub1[sub1==50]), length(sub1[sub1==60]), length(sub1[sub1==70]))
+midwest3 <- sum(length(sub1[sub1==80]), length(sub1[sub1==90]), length(sub1[sub1==100]))
+
+length(sub2[sub2==10])
+length(sub2[sub2==20])
+length(sub2[sub2==30])
+length(sub2[sub2==40])
+length(sub2[sub2==50])
+length(sub2[sub2==60])
+length(sub2[sub2==70])
+length(sub2[sub2==80])
+length(sub2[sub2==90])
+length(sub2[sub2==100])
+
+west1 <- sum(length(sub2[sub2==10]), length(sub2[sub2==20]), length(sub2[sub2==30]))
+west2 <- sum(length(sub2[sub2==40]), length(sub2[sub2==50]), length(sub2[sub2==60]), length(sub2[sub2==70]))
+west3 <- sum(length(sub2[sub2==80]), length(sub2[sub2==90]), length(sub2[sub2==100]))
+
+
+length(sub3[sub3==10])
+length(sub3[sub3==20])
+length(sub3[sub3==30])
+length(sub3[sub3==40])
+length(sub3[sub3==50])
+length(sub3[sub3==60])
+length(sub3[sub3==70])
+length(sub3[sub3==80])
+length(sub3[sub3==90])
+length(sub3[sub3==100])
+
+northeast1 <- sum(length(sub3[sub3==10]), length(sub3[sub3==20]), length(sub3[sub3==30]))
+northeast2 <- sum(length(sub3[sub3==40]), length(sub3[sub3==50]), length(sub3[sub3==60]), length(sub3[sub3==70]))
+northeast3 <- sum(length(sub3[sub3==80]), length(sub3[sub3==90]), length(sub3[sub3==100]))
+
+
+
+length(sub4[sub4==10])
+length(sub4[sub4==20])
+length(sub4[sub4==30])
+length(sub4[sub4==40])
+length(sub4[sub4==50])
+length(sub4[sub4==60])
+length(sub4[sub4==70])
+length(sub4[sub4==80])
+length(sub4[sub4==90])
+length(sub4[sub4==100])
+
+outside1 <- sum(length(sub4[sub4==10]), length(sub4[sub4==20]), length(sub4[sub4==30]))
+outside2 <- sum(length(sub4[sub4==40]), length(sub4[sub4==50]), length(sub4[sub4==60]), length(sub4[sub4==70]))
+outside3 <- sum(length(sub4[sub4==80]), length(sub4[sub4==90]), length(sub4[sub4==100]))
+
+
+
+
+midwest <- c(midwest1, midwest2, midwest3)
+west <-c(west1, west2, west3)
+northeast <-c(northeast1, northeast2, northeast3)
+outside <-c(outside1, outside2, outside3)
+
+
+data531 <- rbind(midwest, west, northeast, outside)
+
+#view table
+data531
+
+#calculate Cramer's V
+cramer123<-cramerV(data531)
+
+cramer123
+
+
+#a - >0.1699
+#i ->  0.1711 
+#wb -> 0.1286 
+#T -> 0.2203
+#TV -> 0.2954
+#FU ->0.1665
+#MNS ->0.2415 
+#R -> 0.1917 
+#B -> 0.1297
+#TM -> 0.1712 
+#FR -> 0.2393
+#P -> 0.234
+#GO -> 0.2098 
+#lg -> 0.3271
+```
+
+
+##correlation division for YEAR
+```{r}
+sub1 <- subset(PoliticalKNN$LG,PoliticalKNN$YEAR == 0)
+sub2 <- subset(PoliticalKNN$LG,PoliticalKNN$YEAR == 1)
+sub3 <- subset(PoliticalKNN$LG,PoliticalKNN$YEAR == 2)
+sub4 <- subset(PoliticalKNN$LG,PoliticalKNN$YEAR == 3)
+sub5 <- subset(PoliticalKNN$LG,PoliticalKNN$YEAR == 4)
+
+
+length(sub1[sub1==10])
+length(sub1[sub1==20])
+length(sub1[sub1==30])
+length(sub1[sub1==40])
+length(sub1[sub1==50])
+length(sub1[sub1==60])
+length(sub1[sub1==70])
+length(sub1[sub1==80])
+length(sub1[sub1==90])
+length(sub1[sub1==100])
+
+fresh1 <- sum(length(sub1[sub1==10]), length(sub1[sub1==20]), length(sub1[sub1==30]))
+fresh2 <- sum(length(sub1[sub1==40]), length(sub1[sub1==50]), length(sub1[sub1==60]), length(sub1[sub1==70]))
+fresh3 <- sum(length(sub1[sub1==80]), length(sub1[sub1==90]), length(sub1[sub1==100]))
+
+length(sub2[sub2==10])
+length(sub2[sub2==20])
+length(sub2[sub2==30])
+length(sub2[sub2==40])
+length(sub2[sub2==50])
+length(sub2[sub2==60])
+length(sub2[sub2==70])
+length(sub2[sub2==80])
+length(sub2[sub2==90])
+length(sub2[sub2==100])
+
+soph1 <- sum(length(sub2[sub2==10]), length(sub2[sub2==20]), length(sub2[sub2==30]))
+soph2 <- sum(length(sub2[sub2==40]), length(sub2[sub2==50]), length(sub2[sub2==60]), length(sub2[sub2==70]))
+soph3 <- sum(length(sub2[sub2==80]), length(sub2[sub2==90]), length(sub2[sub2==100]))
+
+
+length(sub3[sub3==10])
+length(sub3[sub3==20])
+length(sub3[sub3==30])
+length(sub3[sub3==40])
+length(sub3[sub3==50])
+length(sub3[sub3==60])
+length(sub3[sub3==70])
+length(sub3[sub3==80])
+length(sub3[sub3==90])
+length(sub3[sub3==100])
+
+Jun1 <- sum(length(sub3[sub3==10]), length(sub3[sub3==20]), length(sub3[sub3==30]))
+Jun2 <- sum(length(sub3[sub3==40]), length(sub3[sub3==50]), length(sub3[sub3==60]), length(sub3[sub3==70]))
+Jun3 <- sum(length(sub3[sub3==80]), length(sub3[sub3==90]), length(sub3[sub3==100]))
+
+
+
+length(sub4[sub4==10])
+length(sub4[sub4==20])
+length(sub4[sub4==30])
+length(sub4[sub4==40])
+length(sub4[sub4==50])
+length(sub4[sub4==60])
+length(sub4[sub4==70])
+length(sub4[sub4==80])
+length(sub4[sub4==90])
+length(sub4[sub4==100])
+
+Sen1 <- sum(length(sub4[sub4==10]), length(sub4[sub4==20]), length(sub4[sub4==30]))
+Sen2 <- sum(length(sub4[sub4==40]), length(sub4[sub4==50]), length(sub4[sub4==60]), length(sub4[sub4==70]))
+Sen3 <- sum(length(sub4[sub4==80]), length(sub4[sub4==90]), length(sub4[sub4==100]))
+
+
+length(sub5[sub5==10])
+length(sub5[sub5==20])
+length(sub5[sub5==30])
+length(sub5[sub5==40])
+length(sub5[sub5==50])
+length(sub5[sub5==60])
+length(sub5[sub5==70])
+length(sub5[sub5==80])
+length(sub5[sub5==90])
+length(sub5[sub5==100])
+
+grad1 <- sum(length(sub5[sub5==10]), length(sub5[sub5==20]), length(sub5[sub5==30]))
+grad2 <- sum(length(sub5[sub5==40]), length(sub5[sub5==50]), length(sub5[sub5==60]), length(sub5[sub5==70]))
+grad3 <- sum(length(sub5[sub5==80]), length(sub5[sub5==90]), length(sub5[sub5==100]))
+
+
+fresh <- c(fresh1,fresh2,fresh3)
+sophmore <- c(soph1, soph2, soph3)
+junior <- c(Jun1, Jun2, Jun3)
+senior <- c(Sen1, Sen2, Sen3)
+graduate <-c(grad1,grad2,grad3)
+
+
+data127 <- rbind(fresh, sophmore, junior, senior, graduate)
+
+#view table
+#data127
+
+#calculate Cramer's V
+cramer321<-cramerV(data127)
+
+cramer321
+
+
+#a = 0.1698
+#i = 0.2011
+#wb ->  0.2298 
+#T -> 0.2316
+#TV -> 0.2157 
+#FU -> 0.1979 
+#MNS -> 0.2491 
+#R ->  0.2802
+#B -> 0.1542 
+#TM ->  0.2565 
+#FR -> 0.1682
+#P -> 0.2222 
+#GO ->  0.2643
+#lg -> 0.2546 
+```
+
+
+##correlation division for MAJOR
+```{r}
+#Major 
+#STEM - 0
+#Social Sciences - 1
+#Business - 2
+#Arts - 3
+#STEM BUSINESS - 4
+#STEM ART - 5
+#STEM SOC - 6
+#BUSINESS SOC - 7
+
+sub1 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 0)
+sub2 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 1)
+sub3 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 2)
+sub4 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 3)
+sub5 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 4)
+sub6 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 5)
+sub7 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 6)
+sub8 <- subset(PoliticalKNN$LG,PoliticalKNN$MAJOR == 7)
+
+
+length(sub1[sub1==10])
+length(sub1[sub1==20])
+length(sub1[sub1==30])
+length(sub1[sub1==40])
+length(sub1[sub1==50])
+length(sub1[sub1==60])
+length(sub1[sub1==70])
+length(sub1[sub1==80])
+length(sub1[sub1==90])
+length(sub1[sub1==100])
+
+fresh1 <- sum(length(sub1[sub1==10]), length(sub1[sub1==20]), length(sub1[sub1==30]))
+fresh2 <- sum(length(sub1[sub1==40]), length(sub1[sub1==50]), length(sub1[sub1==60]), length(sub1[sub1==70]))
+fresh3 <- sum(length(sub1[sub1==80]), length(sub1[sub1==90]), length(sub1[sub1==100]))
+
+length(sub2[sub2==10])
+length(sub2[sub2==20])
+length(sub2[sub2==30])
+length(sub2[sub2==40])
+length(sub2[sub2==50])
+length(sub2[sub2==60])
+length(sub2[sub2==70])
+length(sub2[sub2==80])
+length(sub2[sub2==90])
+length(sub2[sub2==100])
+
+soph1 <- sum(length(sub2[sub2==10]), length(sub2[sub2==20]), length(sub2[sub2==30]))
+soph2 <- sum(length(sub2[sub2==40]), length(sub2[sub2==50]), length(sub2[sub2==60]), length(sub2[sub2==70]))
+soph3 <- sum(length(sub2[sub2==80]), length(sub2[sub2==90]), length(sub2[sub2==100]))
+
+
+length(sub3[sub3==10])
+length(sub3[sub3==20])
+length(sub3[sub3==30])
+length(sub3[sub3==40])
+length(sub3[sub3==50])
+length(sub3[sub3==60])
+length(sub3[sub3==70])
+length(sub3[sub3==80])
+length(sub3[sub3==90])
+length(sub3[sub3==100])
+
+Jun1 <- sum(length(sub3[sub3==10]), length(sub3[sub3==20]), length(sub3[sub3==30]))
+Jun2 <- sum(length(sub3[sub3==40]), length(sub3[sub3==50]), length(sub3[sub3==60]), length(sub3[sub3==70]))
+Jun3 <- sum(length(sub3[sub3==80]), length(sub3[sub3==90]), length(sub3[sub3==100]))
+
+
+
+length(sub4[sub4==10])
+length(sub4[sub4==20])
+length(sub4[sub4==30])
+length(sub4[sub4==40])
+length(sub4[sub4==50])
+length(sub4[sub4==60])
+length(sub4[sub4==70])
+length(sub4[sub4==80])
+length(sub4[sub4==90])
+length(sub4[sub4==100])
+
+Sen1 <- sum(length(sub4[sub4==10]), length(sub4[sub4==20]), length(sub4[sub4==30]))
+Sen2 <- sum(length(sub4[sub4==40]), length(sub4[sub4==50]), length(sub4[sub4==60]), length(sub4[sub4==70]))
+Sen3 <- sum(length(sub4[sub4==80]), length(sub4[sub4==90]), length(sub4[sub4==100]))
+
+
+length(sub5[sub5==10])
+length(sub5[sub5==20])
+length(sub5[sub5==30])
+length(sub5[sub5==40])
+length(sub5[sub5==50])
+length(sub5[sub5==60])
+length(sub5[sub5==70])
+length(sub5[sub5==80])
+length(sub5[sub5==90])
+length(sub5[sub5==100])
+
+grad1 <- sum(length(sub5[sub5==10]), length(sub5[sub5==20]), length(sub5[sub5==30]))
+grad2 <- sum(length(sub5[sub5==40]), length(sub5[sub5==50]), length(sub5[sub5==60]), length(sub5[sub5==70]))
+grad3 <- sum(length(sub5[sub5==80]), length(sub5[sub5==90]), length(sub5[sub5==100]))
+
+length(sub6[sub6==10])
+length(sub6[sub6==20])
+length(sub6[sub6==30])
+length(sub6[sub6==40])
+length(sub6[sub6==50])
+length(sub6[sub6==60])
+length(sub6[sub6==70])
+length(sub6[sub6==80])
+length(sub6[sub6==90])
+length(sub6[sub6==100])
+
+sb1 <- sum(length(sub6[sub6==10]), length(sub6[sub6==20]), length(sub6[sub6==30]))
+sb2 <- sum(length(sub6[sub6==40]), length(sub6[sub6==50]), length(sub6[sub6==60]), length(sub6[sub6==70]))
+sb3 <- sum(length(sub6[sub6==80]), length(sub6[sub6==90]), length(sub6[sub6==100]))
+
+length(sub7[sub7==10])
+length(sub7[sub7==20])
+length(sub7[sub7==30])
+length(sub7[sub7==40])
+length(sub7[sub7==50])
+length(sub7[sub7==60])
+length(sub7[sub7==70])
+length(sub7[sub7==80])
+length(sub7[sub7==90])
+length(sub7[sub7==100])
+
+sa1 <- sum(length(sub7[sub7==10]), length(sub7[sub7==20]), length(sub7[sub7==30]))
+sa2 <- sum(length(sub7[sub7==40]), length(sub7[sub7==50]), length(sub7[sub7==60]), length(sub7[sub7==70]))
+sa3 <- sum(length(sub7[sub7==80]), length(sub7[sub7==90]), length(sub7[sub7==100]))
+
+length(sub8[sub8==10])
+length(sub8[sub8==20])
+length(sub8[sub8==30])
+length(sub8[sub8==40])
+length(sub8[sub8==50])
+length(sub8[sub8==60])
+length(sub8[sub8==70])
+length(sub8[sub8==80])
+length(sub8[sub8==90])
+length(sub8[sub8==100])
+
+bs1 <- sum(length(sub8[sub8==10]), length(sub8[sub8==20]), length(sub8[sub8==30]))
+bs2 <- sum(length(sub8[sub8==40]), length(sub8[sub8==50]), length(sub8[sub8==60]), length(sub8[sub8==70]))
+bs3 <- sum(length(sub8[sub8==80]), length(sub8[sub8==90]), length(sub8[sub8==100]))
+
+
+
+fresh <- c(fresh1,fresh2,fresh3)
+sophmore <- c(soph1, soph2, soph3)
+junior <- c(Jun1, Jun2, Jun3)
+senior <- c(Sen1, Sen2, Sen3)
+graduate <-c(grad1,grad2,grad3)
+sb <-c(sb1,sb2,sb3)
+sa <-c(sa1,sa2,sa3)
+bs <-c(bs1,bs2,bs3)
+
+data820 <- rbind(fresh, sophmore, junior, senior, graduate, sb, sa, bs)
+
+#view table
+#data127
+
+#calculate Cramer's V
+cramer3221<-cramerV(data820)
+
+cramer3221
+
+
+#a =  0.4304 
+#i = 0.2691 
+#wb -> 0.4254 
+#T -> 0.3139 
+#TV -> 0.4053
+#FU ->  0.3955
+#MNS ->  0.4094 
+#R ->  0.3901
+#B ->  0.3386
+#TM ->  0.3743 
+#FR -> 0.275
+#P ->  0.345
+#GO ->  0.4827 
+#lg ->  0.3632
+```
+
+```{r}
+subs1 <- subset(PoliticalKNN$A,PoliticalKNN$SEX =="1")
+subs2 <- subset(PoliticalKNN$A,PoliticalKNN$SEX =="0")
+
+gender<- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)
+
+scores <- c(subs2,subs1)
+
+cor.test(gender, scores)
+```
