@@ -1,0 +1,130 @@
+#TREE Project README
+#Project was made by Ryczek, Bart  | Puaca, Nenad
+
+
+Introduction:
+Our goal was to produce a tree model that would accurately predict whether there would be a
+booking cancellation done using a range of predictors. Since our goal was prediction accuracy, there
+would be no form of data summary nor inferential testing done, as these don’t contribute to prediction
+accuracy. The goal was to set up three tree models and compare their results, and see whichever tree
+had the highest accuracy to use for predicting on booking status.
+
+Data:
+Using the data provided for the booking status, we had 18 total variables to work with; (ID not
+valid), the number of adults and children, weekend and weeknights booked, the meal plan, if car parking
+was required, room type reserved, the leading time till the booking, arrival date (MM/DD/YY), market
+segment type, whether the guest was repeated or not, number of previous bookings and whether they
+were canceled, average price of the room, the number of special requests and lastly the booking status
+(response). From observing the variables and their values, we determined the following variable types:
+Factors:
+● Meal plan
+● If car parking was required
+● Type of room reserved
+● Market segment type
+● Whether the guest was repeated
+All other predictors were numeric, and our goal was to interpret the data and see which
+variables were the best. We fit models with both all predictors and a subset of the most important
+predictors, although this appeared unnecessary (as shown later).
+
+LASSO Selection:
+Our first goal was determining which variables were the best for this dataset. Initially, we ran a
+separate predictive model (LASSO Model), that was an elastic net. The elastic net is a form of penalized
+regression that applies a shrinkage factor on the coefficients of the linear model produced by the
+predictors. This penalization decreases the MSE by removing variance depending on the penalty factor,
+which in the case of the LASSO (special case) can lead some of the coefficients to be 0, and thus be
+removed from the model (Fig 3). This form of variable selection would be invaluable as we didn’t believe
+that all 17 predictors were necessary for our model. The LASSO would be a good way to remove these
+variables and we ran code to obtain the best shrinkage parameter through cross-validation (Fig 4).
+Unfortunately, this process was complete, and the model had applied the penalty factor, almost all of the
+coefficients remained in the model: the only coefficient that was dropped was the type of meal plan
+(one level of it) and the coefficients of all other predictors were reduced significantly. This ended up
+being an unsuccessful attempt at variable selection and we proceeded with the next method to obtain
+our important variables (Fig 5).
+
+
+RF Importance:
+With the LASSO failing to provide a better feature space, we proceeded to use the output of our
+random forest to choose our feature space. By observing which predictors would result in the greatest
+reduction in misclassification, we saw that there were 6 main predictors to be used: the lead time, arrival
+month and day, market segment type, average price per room, and the number of special requests. We
+determined these to be the most important by observing which variables had a mean decrease in the
+gene index > 1000, leaving these variables to be the chosen variables we’d use (Fig 6).
+
+
+Variable Creation:
+Our final step with data selection was to try and create variables that would be a combination of
+our pre-existing predictors. We made 2 variables in attempts to do this, which consisted of a “family”
+and “big group” variable. The family variable was a factor that would be positive if there were both
+adults and children in the observation. We believed this would be the case that if the observation was a
+family, plans could be canceled because of children being difficult to handle or because of possible life
+situations such as injuries causing a change in plans. Additionally, we made a big group variable that was
+positive if there were more than 3 people from the sum of the number of adults and children. Our idea
+was the larger the group was, the more likely it was that plans would be canceled because if one person
+couldn’t make it on the trip, the booking would be canceled. When we ran these variables in our random
+forest however, it appeared that neither of these variables appeared to be significant, and so we
+continued to build our models on the 6 main predictors mentioned previously.
+
+
+Methods:
+K – fold cross validation:
+Before discussing our models, we firstly agreed that we needed to use k-fold cross-validation
+over the traditional partitioning of our data. This procedure instead splits the data from the traditional
+70:30 train to test ratio, to k groups. A looping sequence is then done to use an 80:20 train test ratio,
+with a misclassification rate being obtained. This process is repeated for all k groups. The advantages
+that this offer is that it allows for using all of the data on training and testing and makes sure that there is
+no issue/bias within the training data, whereas the single partition cross-validation could have a bad
+train sample, which can affect the model’s prediction accuracy. We used k = 5, which would be used
+whenever we accessed our models. Again, it should also be noted that we weren’t interested in training
+error because the training error would always be reduced with model complexity, and so we only
+focused on the testing error.
+
+Model: Normal Tree
+Our regular tree model was first built on all of the predictors, with there being no pruning or
+cross-validation done. The model had a test accuracy of roughly (approximation as slight changes in
+sample increase this or decrease this by .1) .77 or 77% and the tree model only used the same variables
+that came up as important in the random forest model. There were 9 total nodes, with 5 of them being
+terminal nodes (Fig 1). The first node consisted of the lead time, with the second layer nodes consisting
+of the market segment type (if yes to lead time < 150) and average price per room if otherwise.
+Strangely, our tree created a node for the average price per room but showed that regardless of the
+average price per room, the model would predict this to be a canceled booking regardless. The left side
+of the tree continued further by the number of special requests being made. We decided to
+cross-validate for the number of splits, and when observing for the number of splits, there was no
+significant difference in how many splits were used but they needed to be between 3 and 5 nodes (later
+after using reduced variables, using more than 5 nodes resulted in same tree being used), as any node
+counts between this range would result in the same tree with the accuracy being 77% (Fig 2).
+Additionally, using our selected variables didn’t change this, and so we concluded that our main single
+tree would have a classification rate of 77%.
+
+
+Model: Random Forest
+Our random forest model was first built on the full data set and 500 trees being used, and it had
+an MSE of 80%, though not much higher than our regular tree, it was higher nonetheless. We wanted to
+tune the forest by cross-validating to see what the optimal number of trees would be. Due to the nature
+of Random Forests, the classification rate will typically increase with the number of trees, and then
+plateau and remain plateaued despite the number of trees increasing. We thus determined that the
+model truly performed well after 200 trees, as the classification rate rose and began plateauing at 80 to
+82% accuracy at that many number of trees. We built it on both all and reduced predictors but due to
+how random forests randomly select which variables are used, the model performed the same and we
+concluded that the random forest would have an 81% classification rate.
+
+Model: Boosting
+Boosting maintained packaging issues; code still present however.
+
+Results:
+Overall we concluded that the best model to predict with would be the random forest as it
+would be less likely to be truly over-fitting compared to our tree, and with the higher 81% accuracy we
+used this as our main model for predicting. When submitting our predictions from our random forest,
+our predictions were 81.524% accurate.
+
+Conclusion/Future Work:
+Reflecting on the project, there were certain things that could’ve been handled differently. From
+a prediction perspective, we were curious as to how well a Support Vector Machine would perform in
+predicting this data; since the response was a 2 factor variable, a SVM could potentially find a partition
+space large enough to separate both groups in the given feature space. Aside from the SVM, we’d also be
+interested in observing how other classification models such as classification GAMs or KNN would
+perform in prediction. On the project itself, we believed it would’ve been more beneficial to spend more time on
+deriving variables; compared to how well a model is built, having good data can ultimately lead to the
+best predictions, and constructing more variables could’ve boosted the accuracy rating of our models
+further. Additionally, we’d like to redo the variable selection methods such as LASSO but try
+standardizing the data and only using it on the numeric variables instead of dealing with certain levels of
+variables being dropped.
