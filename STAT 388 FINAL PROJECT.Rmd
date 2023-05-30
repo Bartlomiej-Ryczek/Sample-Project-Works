@@ -1,0 +1,529 @@
+---
+title: "STAT 388 Project"
+author: "Bart Ryczek"
+date: '2022-12-07'
+output: pdf_document
+---
+
+```{r}
+data <- read.csv("C:/Users/Bart/Downloads/train_with_imputed.csv")
+```
+
+
+#RANDOM FOREST
+```{r}
+`data` <- read.csv("C:/Users/Bart/Downloads/train_final (1).csv")
+
+data$HomePlanet<-as.factor(data$HomePlanet)
+data$CryoSleep<-as.factor(data$CryoSleep)
+data$Destination<-as.factor(data$Destination)
+data$VIP<-as.factor(data$VIP)
+data$Transported<-as.factor(data$Transported)
+data$Gender<-as.factor(data$Gender)
+data$Deck<-as.factor(data$Deck)
+data$Side<-as.factor(data$Side)
+data$ActualFamily<-as.factor(data$ActualFamily)
+data$Expenses <- data$FoodCourt + data$Spa + data$ShoppingMall + data$VRDeck + data$RoomService 
+
+library(randomForest)
+set.seed(1231)
+index<-sample(1:nrow(data))
+groups<-cut(1:nrow(data),5,labels=FALSE)
+folds<-split(index,groups)
+acc<-c()
+imp<-list()
+for(k in 1:5){
+ 
+  # k-fold cross validation
+  test<-data[unlist(folds[k]),]
+  train<-data[-unlist(folds[k]),]
+ 
+  # model
+  model<-randomForest(Transported~.-Name-PassengerId-X,data=train,importance=TRUE)
+ 
+  # classification accuracy
+  true<-test$Transported
+  pred<-predict(model,test)
+  acc[k]<-mean(true==pred)
+  imp[[k]]<-model$importance
+}
+
+# 5-fold means
+mean(acc)
+imp
+varImpPlot(model)
+```
+
+#SVM
+```{r}
+`data` <- read.csv("C:/Users/Bart/Downloads/train_final (1).csv")
+
+data$HomePlanet<-as.factor(data$HomePlanet)
+data$CryoSleep<-as.factor(data$CryoSleep)
+data$Destination<-as.factor(data$Destination)
+data$VIP<-as.factor(data$VIP)
+data$Transported<-as.factor(data$Transported)
+data$Gender<-as.factor(data$Gender)
+data$Deck<-as.factor(data$Deck)
+data$Side<-as.factor(data$Side)
+data$ActualFamily<-as.factor(data$ActualFamily)
+#data$Expenses <- data$FoodCourt + data$Spa + data$ShoppingMall + data$VRDeck + data$RoomService 
+#SVM Doesnt like expenses
+
+
+set.seed(1231)
+index<-sample(1:nrow(data))
+groups<-cut(1:nrow(data),5,labels=FALSE)
+folds<-split(index,groups)
+acc<-c()
+imp<-list()
+for(k in 1:5){
+ 
+  # k-fold cross validation
+  test<-data[unlist(folds[k]),]
+  train<-data[-unlist(folds[k]),]
+ 
+  # model
+    model<-svm(Transported~.-Name-PassengerId-X,data=train, cost=0.6, kernel="linear")
+ 
+  # classification accuracy
+  true<-test$Transported
+  pred<-predict(model,test)
+  acc[k]<-mean(true==pred)
+}
+
+# 5-fold means
+mean(acc)
+```
+
+```{r}
+#SAVE SPACE
+#tunetest <- tune.svm(Transported~.-Name-PassengerId,data=train, cost=c(1:10)/10, kernel="linear")
+
+##LINEAR KERNEL UNTUNED #2nd best 0.7707336
+  model<-svm(Transported~.-Name-PassengerId,data=train, cost=0.01, kernel="linear") #best tuneing is .6
+  
+#RADIAL KERNEL UNTUNED
+model<-svm(Transported~.-Name-PassengerId,data=train, cost=0.01, kernel="radial", gamma = 0.5) # gamma .1 best
+
+#Polynomial KERNEL UNTUNED
+model<-svm(Transported~.-Name-PassengerId,data=train, cost=0.01, kernel="polynomial", degree = 2) # all these degrees 2,3,4 suck
+  
+#sigma KERNEL UNTUNED #BEST SO FAR .775
+ model<-svm(Transported~.-Name-PassengerId,data=train, cost=0.01, kernel="sigmoid", gamma = .1) #best parmcost = 0.021, gamma same
+```
+
+
+
+
+#KNN
+```{r}
+`data` <- read.csv("C:/Users/Bart/Downloads/train_final (1).csv")
+
+data$HomePlanet<-as.factor(data$HomePlanet)
+data$CryoSleep<-as.factor(data$CryoSleep)
+data$Destination<-as.factor(data$Destination)
+data$VIP<-as.factor(data$VIP)
+data$Transported<-as.factor(data$Transported)
+data$Gender<-as.factor(data$Gender)
+data$Deck<-as.factor(data$Deck)
+data$Side<-as.factor(data$Side)
+data$ActualFamily<-as.factor(data$ActualFamily)
+
+#dummy
+#home planet
+data$homeplanetdummy1 <- rep(0, nrow(data))
+data$homeplanetdummy1[data$HomePlanet == "Europa"] <- 1
+data$homeplanetdummy2 <- rep(0, nrow(data))
+data$homeplanetdummy2[data$HomePlanet == "Mars"] <- 1
+
+data$homeplanetdummy1 <- as.factor(data$homeplanetdummy1)
+data$homeplanetdummy2 <- as.factor(data$homeplanetdummy2)
+
+#destination
+
+data$Destinationdummy1 <- rep(0, nrow(data))
+data$Destinationdummy1[data$Destination == "55 Cancri e"] <- 1
+data$Destinationdummy2 <- rep(0, nrow(data))
+data$Destinationdummy2[data$Destination == "TRAPPIST-1e"] <- 1
+
+
+data$Destinationdummy1 <- as.factor(data$Destinationdummy1)
+data$Destinationdummy2 <- as.factor(data$Destinationdummy2)
+
+#deck
+data$deckdummy1 <- rep(0, nrow(data))
+data$deckdummy1[data$Deck == "A"] <- 1
+data$deckdummy2 <- rep(0, nrow(data))
+data$deckdummy2[data$Deck == "B"] <- 1
+data$deckdummy3 <- rep(0, nrow(data))
+data$deckdummy3[data$Deck == "C"] <- 1
+data$deckdummy4 <- rep(0, nrow(data))
+data$deckdummy4[data$Deck == "D"] <- 1
+data$deckdummy5 <- rep(0, nrow(data))
+data$deckdummy5[data$Deck == "E"] <- 1
+data$deckdummy6 <- rep(0, nrow(data))
+data$deckdummy6[data$Deck == "F"] <- 1
+data$deckdummy7 <- rep(0, nrow(data))
+data$deckdummy7[data$Deck == "G"] <- 1
+
+data$deckdummy1 <- as.factor(data$deckdummy1)
+data$deckdummy2 <- as.factor(data$deckdummy2)
+data$deckdummy3 <- as.factor(data$deckdummy3)
+data$deckdummy4 <- as.factor(data$deckdummy4)
+data$deckdummy5 <- as.factor(data$deckdummy5)
+data$deckdummy6 <- as.factor(data$deckdummy6)
+data$deckdummy7 <- as.factor(data$deckdummy7)
+
+
+#cryosleep
+data$cryodummy <- rep(0, nrow(data))
+data$cryodummy[data$CryoSleep == "True"] <- 1
+as.factor(data$cryodummy)
+
+#VIP
+data$vipdummy <- rep(0, nrow(data))
+data$vipdummy[data$VIP == "True"] <- 1
+as.factor(data$vipdummy)
+
+#gender
+data$genderdummy <- rep(0, nrow(data))
+data$genderdummy[data$Gender == "male"] <- 1
+as.factor(data$genderdummy)
+
+#Side
+data$sidedummy <- rep(0, nrow(data))
+data$sidedummy[data$Side == "S"] <- 1
+as.factor(data$sidedummy)
+
+data <- data[-c(1:5, 7, 14, 15,16, 17)]
+
+#scaling
+data$Age <- scale(data$Age)
+data$RoomService <- scale(data$RoomService)
+data$FoodCourt <- scale(data$FoodCourt)
+data$ShoppingMall <- scale(data$ShoppingMall)
+data$Spa <- scale(data$Spa)
+data$VRDeck <- scale(data$VRDeck)
+
+set.seed(1231)
+index<-sample(1:nrow(data))
+groups<-cut(1:nrow(data),5,labels=FALSE)
+folds<-split(index,groups)
+acc<-c()
+imp<-list()
+for(k in 1:5){
+ 
+  # k-fold cross validation
+  test<-data[unlist(folds[k]),]
+  train<-data[-unlist(folds[k]),-7]
+  temptrain <- data[-unlist(folds[k]),]
+  temptest <-data[unlist(folds[k]),-7] 
+  trainy <- temptrain$Transported
+ 
+  # model #inital 
+  kn <- knn(train = train, test = temptest, cl = trainy, k=35)
+  
+ 
+  # classification accuracy
+  true<-test$Transported
+  pred<-kn
+  acc[k]<-mean(true==pred)
+}
+
+# 5-fold means
+mean(acc)
+```
+
+k = 5, 0.7640632
+k = 6, 0.7676286
+k = 7, 0.7733804
+k = 8, 0.7740714
+k = 35, 0.780053
+anything greater doesn't change best k = 35 even for different seeds
+##############TESTING##################
+```{r}
+#`data` <- read.csv("C:/Users/Bart/Downloads/train_final (1).csv")
+
+#data$HomePlanet<-as.factor(data$HomePlanet)
+#data$CryoSleep<-as.factor(data$CryoSleep)
+#data$Destination<-as.factor(data$Destination)
+#data$VIP<-as.factor(data$VIP)
+#data$Transported<-as.factor(data$Transported)
+#data$Gender<-as.factor(data$Gender)
+#data$Deck<-as.factor(data$Deck)
+#data$Side<-as.factor(data$Side)
+#data$ActualFamily<-as.factor(data$ActualFamily)
+
+#data <- data[-c(1,2,17)]
+
+```
+
+
+```{r}
+test_final <- read.csv("C:/Users/Bart/Downloads/test_final.csv")
+test_final$HomePlanet<-as.factor(test_final$HomePlanet)
+test_final$CryoSleep<-as.factor(test_final$CryoSleep)
+test_final$Destination<-as.factor(test_final$Destination)
+test_final$VIP<-as.factor(test_final$VIP)
+test_final$Gender<-as.factor(test_final$Gender)
+test_final$Deck<-as.factor(test_final$Deck)
+test_final$ActualFamily<-as.factor(test_final$ActualFamily)
+test_final$Side[test_final$Side == 1] <- "S"
+#test_final$Side<-as.factor(test_final$Side)
+test_final$Side[test_final$Side == 1] <- "S"
+test_final$Side<-as.factor(test_final$Side)
+test_final <- test_final[-c(1,2,13)]
+```
+
+#SVM test
+```{r}
+#model <-svm(Transported~.,data=data, cost=0.6, kernel="linear") #best tuneing is .6
+
+#preds <- predict(model, newdata = test_final)
+
+PassengerID <- test_final$X
+Transported <- preds
+
+SVM_predictions <- data.frame(PassengerID, Transported)
+
+write.csv(SVM_predictions,"C:\\Users\\Bart\\Desktop\\SVM_Preds.csv", row.names = FALSE)
+```
+
+
+#KNN test
+
+```{r}
+`data` <- read.csv("C:/Users/Bart/Downloads/train_final (1).csv")
+
+data$HomePlanet<-as.factor(data$HomePlanet)
+data$CryoSleep<-as.factor(data$CryoSleep)
+data$Destination<-as.factor(data$Destination)
+data$VIP<-as.factor(data$VIP)
+data$Transported<-as.factor(data$Transported)
+data$Gender<-as.factor(data$Gender)
+data$Deck<-as.factor(data$Deck)
+data$Side<-as.factor(data$Side)
+data$ActualFamily<-as.factor(data$ActualFamily)
+
+#dummy
+#home planet
+data$homeplanetdummy1 <- rep(0, nrow(data))
+data$homeplanetdummy1[data$HomePlanet == "Europa"] <- 1
+data$homeplanetdummy2 <- rep(0, nrow(data))
+data$homeplanetdummy2[data$HomePlanet == "Mars"] <- 1
+
+data$homeplanetdummy1 <- as.factor(data$homeplanetdummy1)
+data$homeplanetdummy2 <- as.factor(data$homeplanetdummy2)
+
+#destination
+
+data$Destinationdummy1 <- rep(0, nrow(data))
+data$Destinationdummy1[data$Destination == "55 Cancri e"] <- 1
+data$Destinationdummy2 <- rep(0, nrow(data))
+data$Destinationdummy2[data$Destination == "TRAPPIST-1e"] <- 1
+
+
+data$Destinationdummy1 <- as.factor(data$Destinationdummy1)
+data$Destinationdummy2 <- as.factor(data$Destinationdummy2)
+
+#deck
+data$deckdummy1 <- rep(0, nrow(data))
+data$deckdummy1[data$Deck == "A"] <- 1
+data$deckdummy2 <- rep(0, nrow(data))
+data$deckdummy2[data$Deck == "B"] <- 1
+data$deckdummy3 <- rep(0, nrow(data))
+data$deckdummy3[data$Deck == "C"] <- 1
+data$deckdummy4 <- rep(0, nrow(data))
+data$deckdummy4[data$Deck == "D"] <- 1
+data$deckdummy5 <- rep(0, nrow(data))
+data$deckdummy5[data$Deck == "E"] <- 1
+data$deckdummy6 <- rep(0, nrow(data))
+data$deckdummy6[data$Deck == "F"] <- 1
+data$deckdummy7 <- rep(0, nrow(data))
+data$deckdummy7[data$Deck == "G"] <- 1
+
+data$deckdummy1 <- as.factor(data$deckdummy1)
+data$deckdummy2 <- as.factor(data$deckdummy2)
+data$deckdummy3 <- as.factor(data$deckdummy3)
+data$deckdummy4 <- as.factor(data$deckdummy4)
+data$deckdummy5 <- as.factor(data$deckdummy5)
+data$deckdummy6 <- as.factor(data$deckdummy6)
+data$deckdummy7 <- as.factor(data$deckdummy7)
+
+
+#cryosleep
+data$cryodummy <- rep(0, nrow(data))
+data$cryodummy[data$CryoSleep == "True"] <- 1
+as.factor(data$cryodummy)
+
+#VIP
+data$vipdummy <- rep(0, nrow(data))
+data$vipdummy[data$VIP == "True"] <- 1
+as.factor(data$vipdummy)
+
+#gender
+data$genderdummy <- rep(0, nrow(data))
+data$genderdummy[data$Gender == "male"] <- 1
+as.factor(data$genderdummy)
+
+#Side
+data$sidedummy <- rep(0, nrow(data))
+data$sidedummy[data$Side == "S"] <- 1
+as.factor(data$sidedummy)
+
+data <- data[-c(1:5, 7, 14, 15,16, 17)]
+
+#scaling
+data$Age <- scale(data$Age)
+data$RoomService <- scale(data$RoomService)
+data$FoodCourt <- scale(data$FoodCourt)
+data$ShoppingMall <- scale(data$ShoppingMall)
+data$Spa <- scale(data$Spa)
+data$VRDeck <- scale(data$VRDeck)
+
+
+tempdata <- data[-c(7)]
+class <- data$Transported
+  
+####################TEST DATA CORRECTION
+test_final <- read.csv("C:/Users/Bart/Downloads/test_final.csv")
+test_final$HomePlanet<-as.factor(test_final$HomePlanet)
+test_final$CryoSleep<-as.factor(test_final$CryoSleep)
+test_final$Destination<-as.factor(test_final$Destination)
+test_final$VIP<-as.factor(test_final$VIP)
+test_final$Gender<-as.factor(test_final$Gender)
+test_final$Deck<-as.factor(test_final$Deck)
+test_final$ActualFamily<-as.factor(test_final$ActualFamily)
+test_final$Side[test_final$Side == 1] <- "S"
+#test_final$Side<-as.factor(test_final$Side)
+test_final$Side[test_final$Side == 1] <- "S"
+test_final$Side<-as.factor(test_final$Side)
+test_final <- test_final[-c(1,2,13)]
+
+
+
+#dummy
+#home planet
+test_final$homeplanetdummy1 <- rep(0, nrow(test_final))
+test_final$homeplanetdummy1[test_final$HomePlanet == "Europa"] <- 1
+test_final$homeplanetdummy2 <- rep(0, nrow(test_final))
+test_final$homeplanetdummy2[test_final$HomePlanet == "Mars"] <- 1
+
+test_final$homeplanetdummy1 <- as.factor(test_final$homeplanetdummy1)
+test_final$homeplanetdummy2 <- as.factor(test_final$homeplanetdummy2)
+
+#destination
+
+test_final$Destinationdummy1 <- rep(0, nrow(test_final))
+test_final$Destinationdummy1[test_final$Destination == "55 Cancri e"] <- 1
+test_final$Destinationdummy2 <- rep(0, nrow(test_final))
+test_final$Destinationdummy2[test_final$Destination == "TRAPPIST-1e"] <- 1
+
+
+test_final$Destinationdummy1 <- as.factor(test_final$Destinationdummy1)
+test_final$Destinationdummy2 <- as.factor(test_final$Destinationdummy2)
+
+#deck
+test_final$deckdummy1 <- rep(0, nrow(test_final))
+test_final$deckdummy1[test_final$Deck == "A"] <- 1
+test_final$deckdummy2 <- rep(0, nrow(test_final))
+test_final$deckdummy2[test_final$Deck == "B"] <- 1
+test_final$deckdummy3 <- rep(0, nrow(test_final))
+test_final$deckdummy3[test_final$Deck == "C"] <- 1
+test_final$deckdummy4 <- rep(0, nrow(test_final))
+test_final$deckdummy4[test_final$Deck == "D"] <- 1
+test_final$deckdummy5 <- rep(0, nrow(test_final))
+test_final$deckdummy5[test_final$Deck == "E"] <- 1
+test_final$deckdummy6 <- rep(0, nrow(test_final))
+test_final$deckdummy6[test_final$Deck == "F"] <- 1
+test_final$deckdummy7 <- rep(0, nrow(test_final))
+test_final$deckdummy7[test_final$Deck == "G"] <- 1
+
+test_final$deckdummy1 <- as.factor(test_final$deckdummy1)
+test_final$deckdummy2 <- as.factor(test_final$deckdummy2)
+test_final$deckdummy3 <- as.factor(test_final$deckdummy3)
+test_final$deckdummy4 <- as.factor(test_final$deckdummy4)
+test_final$deckdummy5 <- as.factor(test_final$deckdummy5)
+test_final$deckdummy6 <- as.factor(test_final$deckdummy6)
+test_final$deckdummy7 <- as.factor(test_final$deckdummy7)
+
+
+#cryosleep
+test_final$cryodummy <- rep(0, nrow(test_final))
+test_final$cryodummy[test_final$CryoSleep == "True"] <- 1
+as.factor(test_final$cryodummy)
+
+#VIP
+test_final$vipdummy <- rep(0, nrow(test_final))
+test_final$vipdummy[test_final$VIP == "True"] <- 1
+as.factor(test_final$vipdummy)
+
+#gender
+test_final$genderdummy <- rep(0, nrow(test_final))
+test_final$genderdummy[test_final$Gender == "male"] <- 1
+as.factor(test_final$genderdummy)
+
+#Side
+test_final$sidedummy <- rep(0, nrow(test_final))
+test_final$sidedummy[test_final$Side == "S"] <- 1
+as.factor(test_final$sidedummy)
+
+test_final <- test_final[-c(1,2,3,5,11,12,13)]
+
+#scaling
+test_final$Age <- scale(test_final$Age)
+test_final$RoomService <- scale(test_final$RoomService)
+test_final$FoodCourt <- scale(test_final$FoodCourt)
+test_final$ShoppingMall <- scale(test_final$ShoppingMall)
+test_final$Spa <- scale(test_final$Spa)
+test_final$VRDeck <- scale(test_final$VRDeck)
+
+
+```
+#######################
+```{r}
+
+predsknn <- knn(train = tempdata, test = test_final, cl = class, k = 35)
+
+
+test_final <- read.csv("C:/Users/Bart/Downloads/test_final.csv")
+
+PassengerID <- test_final$X
+Transported <- predsknn
+
+KNN_predictions <- data.frame(PassengerID, Transported)
+
+write.csv(KNN_predictions,"C:\\Users\\Bart\\Desktop\\KNN_Preds.csv", row.names = FALSE)
+```
+
+
+
+#Random forest test
+```{r}
+test_final <- read.csv("C:/Users/Bart/Downloads/test_final.csv")
+PassengerID <- test_final$X
+
+test_final$HomePlanet<-as.factor(test_final$HomePlanet)
+test_final$CryoSleep<-as.factor(test_final$CryoSleep)
+test_final$Destination<-as.factor(test_final$Destination)
+test_final$VIP<-as.factor(test_final$VIP)
+test_final$Gender<-as.factor(test_final$Gender)
+test_final$Deck<-as.factor(test_final$Deck)
+test_final$ActualFamily<-as.factor(test_final$ActualFamily)
+test_final$Side[test_final$Side == 1] <- "S"
+#test_final$Side<-as.factor(test_final$Side)
+test_final$Side[test_final$Side == 1] <- "S"
+test_final$Side<-as.factor(test_final$Side)
+test_final <- test_final[-c(1,2,13)]
+
+model<-randomForest(Transported~.-Name-PassengerId-X,data=data,importance=TRUE)
+
+preds <- predict(model, newdata = test_final)
+
+Transported <- preds
+
+RF_predictions <- data.frame(PassengerID, Transported)
+
+write.csv(RF_predictions,"C:\\Users\\Bart\\Desktop\\RF_Preds.csv", row.names = FALSE)
+```
