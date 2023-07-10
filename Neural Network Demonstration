@@ -1,0 +1,51 @@
+#Single-node classification for the "AND" Operator:
+
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+
+#make sure arrays have float for more accurate adjustments
+input_data = np.array([[0.0,0.0], [0.0,1.0], [1.0,0.0], [1.0,1.0]])
+input_test = np.array([0.0, 0.0, 0.0, 1.0])
+weights = np.array([0.0,0.0])
+learn_rate = 0.1
+
+
+def sum_function(intake):
+  sum = intake.dot(weights)
+  return sum
+
+def activtion_function(sum_from_prev):
+  if sum_from_prev >= 1.0:
+    return 1.0
+  else:
+    return 0.0
+
+
+def output_calc(input_vector):
+  sum = sum_function(input_vector)
+  output =  activtion_function(sum)
+  return output
+
+
+def train():
+  error = 1
+  iter=0
+  while error != 0:
+    error = 0
+    for i in range(len(input_data)):
+      if output_calc(input_data[i]) == input_test[i]:
+        print(f"{input_data[i]} had output of {output_calc(input_data[i])}, matching with {input_test[i]}")
+      else:
+        print()
+        print("Error: mismatch")
+        print(f"{input_data[i]} had output of {output_calc(input_data[i])}, not matching with {input_test[i]}")
+        error += 1
+        for j in range(len(weights)):
+          weights[j] = weights[j] + (learn_rate * input_test[i] * (input_data[i][j]))
+        iter += 1
+        print("Update Epoc now at:", iter)
+        print("Weights now", weights)
+        print()
+
+train()
+#Network is now properly trained for the "AND" Operator
