@@ -1,14 +1,11 @@
-#Predictive Analytics README
+#Catastrophe ML Project README
 #project was made with Rob Sisto and Angelos Vasilopoulos.
 
 
 I. Introduction
-The Spaceship Titanic was an "interstellar passenger liner" with about 13
-thousand voyagers traveling to various "newly habitable exoplanets" in surrounding star
-systems. The spaceship "collided with a spacetime anomaly" that caused half of the
-ship's passengers to be transported to an alternate dimension. Here we predict
-transportation of the passengers on the Spaceship Titanic to an alternate dimension
-using 13 given variables and several derived variables (Tables 1 and 2).
+In a castarophy scenario of a navy vessel involving the deaths of a set number of individuals,
+the task at hand given our data, is  to determine health status of an individual if a similar
+event where to occur.
 
 
 
