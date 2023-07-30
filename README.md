@@ -1,10 +1,10 @@
 # Overview
 These are the titles of the projects and what they are (each have their own readme for bonus information):
 
-STAT 307 - Statistical Design Project 
+College Political Study - Data Science/Analyst Project 
 
-STAT 388 - Predictive Analytics Project (Machine Learning) 
+Catastrophe ML Project - Machine Learning Project 
 
-STAT 351 - Tree Predictive Project
+Hotel Booking Project - Data Science/Machine Learning Project
 
 Network Documents - Neural Network Demonstrations
