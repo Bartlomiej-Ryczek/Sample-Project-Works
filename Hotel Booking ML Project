@@ -1,9 +1,9 @@
-#TREE Project README
+#ML Project README
 #Project was made by Ryczek, Bart  | Puaca, Nenad
 
 
 Introduction:
-Our goal was to produce a tree model that would accurately predict whether there would be a
+Our goal was to produce a machine learning (specificallly tree) model that would accurately predict whether there would be a
 booking cancellation done using a range of predictors. Since our goal was prediction accuracy, there
 would be no form of data summary nor inferential testing done, as these don’t contribute to prediction
 accuracy. The goal was to set up three tree models and compare their results, and see whichever tree
