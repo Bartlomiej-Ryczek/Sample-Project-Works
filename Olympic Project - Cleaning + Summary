@@ -1,0 +1,360 @@
+/*Import Step*/
+
+proc import out= projectdata 
+datafile= "/home/u59309073/sasuser.v94/Project Data.csv"
+DBMS=csv
+replace;
+getnames=YES;
+run;
+
+data project2;
+set projectdata;
+heightnum = input(height,4.);
+weightnum = input(weight,4.);
+*num to char = put(x,8.);
+run;
+proc contents data=project2;
+run;
+
+
+/*Summary Statistics Step*/
+
+proc means data=project2 n mean median mode std stderr var qrange min max skewness kurtosis;
+var heightnum weightnum;
+run;
+
+
+data project3;
+set project2;
+if heightnum="" then DELETE;
+if weightnum="" then DELETE;
+if weightnum<37.5 and sex="F" then delete; *done with iqr outlier test for males and females;
+if weightnum>81.5 and sex="F" then delete;
+if weightnum>104.5 and sex="M" then delete;
+if weightnum<50.5 and sex="M" then delete;
+/* if heightnum>189.5 and sex="F" then delete; */
+/* if heightnum<145.5 and sex="F" then delete; */
+/* if heightnum>202 and sex="M" then delete; */
+/* if heigttnum<154 and sex="M" then delete; */
+run;
+
+ods graphics on;
+proc reg data=project3 plots=predictions(x = age)plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+by sex;
+run;
+
+
+
+proc sort data=project3;
+by sex;
+run;
+
+proc means data=project3 Q3 Q1 mean median Qrange min;
+by sex;
+run;
+
+proc sgplot data=project3;
+hbox weightnum;
+by sex;
+run;
+
+proc sgplot data=project3;
+hbox heightnum;
+by sex;
+run;
+
+proc means data=project3 qrange Q1 Q3;
+var heightnum;
+by sex;
+run;
+
+Proc sort data=project3;
+By sex;
+run;
+
+proc corr data=project3 plots(MAXPOINTS=50000000)=matrix;
+var heightnum weightnum age year; 
+by  sex; 
+run;
+
+
+proc univariate data=project2 plots;
+var heightnum weightnum age;
+run;
+
+proc sort data=project2;
+
+
+proc gplot data=project2;
+
+
+
+
+proc freq data=projectdata;
+tables weight*sex/out=freqdesc;
+run;
+ 
+ proc gchart data=freqdesc;
+ vbar weight/group = sex sumvar=percent;
+ run;
+ 
+*histograms, outliers, boxplots, plots, N/A data; 
+*freq tables and bar charts;
+
+data proj1;
+set project2;
+run;
+
+
+proc sort data=proj1 out=NoDuplicates1 nodupkey;
+	by Name;
+run;
+
+proc print data=noduplicates1 obs=25;
+run;
+
+proc freq data=project2;
+tables sex*year;
+where year>1973;
+run;
+
+proc freq data=project2;
+tables sex*year;
+where year<1973;
+run;
+
+
+/*Serious stuff point */
+
+data projectnoDUPE;
+set project2;
+run;
+proc sort data=projectnoDUPE out=NoDuplicates1 nodupkey;
+	by name;
+run;
+
+
+/* for the age by year thing with no duplicates in name  because of dependance issue with multiple data with same name cause of same game different event*/
+data projectage1;
+set noduplicates1;
+if Year < 1973;
+run;
+
+proc sort data=projectage1;
+by year;
+run;
+
+proc freq data=projectage1 order=data;
+tables sex*year;
+where year<1973;
+run;
+
+data ageyear;
+input year malecount femalecount;
+difference = malecount-femalecount;
+datalines;
+1896 174 0
+1900 1181 23
+1904 627 6 
+1906 757 6
+1908 1767 44 
+1912 1972 53
+1920 2271 73
+1924 2795 140 
+1928 2701 305 
+1932 1559 177
+1936 4020 387
+1948 4150 495
+1952 3897 503
+1956 2691 389 
+1960 4102 582
+1964 3908 650 
+1968 4213 756 
+1972 5063 968
+;
+
+Ods select TestsForLocation;
+proc univariate data=ageyear;
+var difference;
+run;
+*for second part of the age thing;
+
+data projectage2;
+set noduplicates1;
+if Year > 1973;
+run;
+
+proc sort data=projectage2;
+by year;
+run;
+
+proc freq data=projectage2 order=data;
+tables sex*year;
+where year>1973;
+run;
+
+proc freq data=project3;
+tables medal*NOC;
+by NOC;
+where NOC="USA" and year<2000;
+run;
+
+data ageyear2;
+input year malecount femalecount;
+difference = malecount - femalecount;
+datalines;
+1976 3942 1196
+1980 3706 1027
+1984 5028 1553
+1988 5434 1949
+1992 5610 2434
+1994 599 255
+1996 4671 2458
+1998 854 524
+2000 4236 2752
+2002 858 520
+2004 3871 2790
+2006 887 541
+2008 3950 2920
+2010 821 590
+2012 3643 2904
+2014 926 613
+2016 3970 3185
+;
+
+Ods select TestsForLocation;
+proc univariate data=ageyear2;
+var difference;
+run;
+
+
+/*Regression steps*/
+
+proc sort data=project3;
+by sex;
+run;
+
+ods graphics on;
+proc reg data=project3 plots=predictions(x = heightnum)plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+by sex;
+run;
+
+
+*transformation on x var since linearity is an issue;
+
+data projectxtran;
+set project3;
+heightnum2=heightnum/6;
+run;
+
+proc sort data=projectxtran;
+by descending heightnum;
+run;
+
+proc sort data=projectxtran;
+by descending weightnum;
+run;
+
+
+
+proc gplot data=project3;
+plot weightnum*heightnum;
+by sex;
+where sex="M";
+run;
+
+
+
+proc print data=project3;
+var weightnum;
+by sex;
+where sex="M";
+run;
+
+ods graphics on;
+proc reg data=projectxtran plots=predictions(x = heightnum2)plots(MAXPOINTS=50000000);
+model weightnum = heightnum2;
+by sex;
+where sex="M";
+run;
+
+ods graphics on;
+proc reg data=project3 plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+run;
+
+ods graphics on;
+proc reg data=project3 plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+run;
+
+ods graphics on;
+proc reg data=project3 plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+/* medal step*/
+
+proc freq data=project2 order=data;
+tables sex*medal/chisq relrisk measures;
+where medal="Gold" or medal="Silver" or medal="Bronze"; 
+run;
+
+proc gchart data=regionsdata;
+vbar medal/group=team levels=all;
+where medal="Gold" or medal="Silver" or medal="Bronze";
+run;
+
+
+
+
+/*Countries and Regions Step*/
+
+proc sort data=project2 out=regionsdata nodupkey;
+	by NOC;
+run;
+
+
+data regionsprep;
+set regionsdata;
+if team="Afghanistan" then Region="Middle East";
+if team="Albania" then Region="Europe";
+if team="Algeria" then Region="Africa (north?";
+if team="American Samoa" then Region="Pacific";
+if team="Andorra" then Region="Europe";
+if team="Angola" then Region="Africa (central?";
+if team="Antigua and Barb" then Region="Central America?";
+if team="Argentina" then Region="South America";
+if team="Armenia" then Region="Europe";
+if team="Aruba" then Region="Central America?";
+if team="Australasia" then Region="Australasian Region";
+if team="Australia" then Region="Australasian Region";
+if team="Austria" then Region="Europe";
+if team="Azerbaijan" then Region="Asia";
+if team="Bahamas" then Region="Central America?";
+if team="Bahrain" then Region="Middle East";
+if team="Bangladesh" then Region="Asia";
+if team="Barbados" then Region="";
+if team="Belarus" then Region="Europe";
+if team="Belgium" then Region="Europe";
+if team="Belize" then Region="";
+if team="Benin" then Region="";
+if team="Bermuda" then Region="";
+if team="Bhutan" then Region="";
+if team="Bohemia" then Region="";
+if team="Bolivia" then Region="";
+if team="Bosnia and Herz" then Region="Europe";
+if team="" then Region="Unknown";
+run;
+
+
+proc sort data=regionsprep;
+by team;
+run;
+
+
+data newregions2;
+set regionsprep;
+run;
+
+
