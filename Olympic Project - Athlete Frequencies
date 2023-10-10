@@ -1,0 +1,199 @@
+/*Import Step*/
+proc import out=projectdata 
+		datafile="/home/u59309073/sasuser.v94/Project Data.csv" DBMS=csv replace;
+	getnames=YES;
+run;
+
+data project2;
+	set projectdata;
+	heightnum=input(height, 4.);
+	weightnum=input(weight, 4.);
+	*num to char = put(x,8.);
+run;
+
+proc contents data=project2;
+run;
+
+data project3;
+	set project2;
+
+	if heightnum="" then
+		DELETE;
+
+	if weightnum="" then
+		DELETE;
+
+	if weightnum<37.5 and sex="F" then
+		delete;
+	*done with iqr outlier test for males and females;
+
+	if weightnum>81.5 and sex="F" then
+		delete;
+
+	if weightnum>104.5 and sex="M" then
+		delete;
+
+	if weightnum<50.5 and sex="M" then
+		delete;
+run;
+
+*include a chi - sqaure on the data to make sure it is/isn't dependant and then do the t test and potentially anova aswell;
+
+data projectnoDUPE;
+	set project2;
+run;
+
+proc sort data=projectnoDUPE out=NoDuplicates1 nodupkey;
+	by name;
+run;
+
+data project2noduplicates;
+	set noduplicates1;
+run;
+
+proc freq data=project2noduplicates;
+	tables sex*year/chisq;
+run;
+
+data regfreq;
+	input year malecount femalecount;
+	proportion=femalecount/(femalecount+malecount)*100;
+	datalines;
+
+1900 1182 23
+1904 628 6 
+1906 761 6
+1908 1773 44 
+1912 1978 53
+1920 2277 73
+1924 2799 140 
+1928 2708 305 
+1932 1559 177
+1936 4036 387
+1948 4165 495
+1952 3914 503
+1956 2699 389 
+1960 4098 582
+1964 3917 650 
+1968 4217 756 
+1972 5079 968
+1976 3946 1196
+1980 3697 1027
+1984 5025 1553
+1988 5429 1949
+1992 5605 2434
+1994 598 255
+1996 4667 2458
+1998 849 524
+2000 4228 2752
+2002 855 520
+2004 3860 2790
+2006 884 541
+2008 3935 2920
+2010 814 590
+2012 3620 2904
+2014 922 613
+2016 3954 3185
+;
+
+proc sgplot data=regfreq;
+	scatter x=year y=proportion;
+run;
+
+data regfreqmod;
+	set regfreq;
+	yearnew=year**(1/2);
+run;
+
+proc reg data=regfreqmod;
+	model proportion=year;
+	run;
+	*good start;
+
+proc reg data=regfreqmod plots=predictions(x=yearnew);
+	model proportion=year yearnew/ selection=forward;
+	run;
+
+proc reg data=regfreqmod;
+	model proportion=year yearnew/selection=backward;
+	run;
+
+proc reg data=regfreqmod;
+	model proportion=year yearnew;
+	run;
+	*main models;
+
+proc reg data=regfreqmod;
+	model proportion=year yearnew/;
+	run;
+
+proc reg data=regfreqmod plots=predictions(x=year);
+	model proportion=year malecount femalecount;
+	run;
+	*seems to be the best based on adjusted as well as residuals;
+
+proc reg data=regfreqmod plots=predictions(x=year);
+	model proportion=year yearnew malecount femalecount;
+	run;
+
+proc reg data=regfreqmod plots=predictions(x=year);
+	model proportion=year yearnew malecount;
+	run;
+	*TRANSFORMATION;
+	*exponential;
+
+data transregfreq;
+	set regfreqmod;
+	lnproportion=log(proportion);
+
+proc reg data=transregfreq plots=predictions(x=year);
+	model lnproportion=year yearnew malecount femalecount;
+	output out=logregmodel predicted=lnproportionhat;
+	run;
+	*power model;
+
+data transregfreq1;
+	set regfreqmod;
+	lnproportion=log(proportion);
+	lnyear=log(year);
+	lnmalecount=log(malecount);
+
+proc reg data=transregfreq1 plots=predictions(x=year);
+	model lnproportion=lnyear lnmalecount;
+	output out=logregmodel1 predicted=lnproportionhat1;
+	run;
+	*recpriocol;
+
+data transregfreq2;
+	set regfreqmod;
+	repproportion=(1/(proportion))+50;
+
+proc reg data=transregfreq2 plots=predictions(x=year);
+	model repproportion=year yearnew;
+	output out=repregmodel1 predicted=repproportionhat1;
+	run;
+	*box cox;
+
+Proc Transreg data=regfreqmod;
+	Model boxcox(proportion)=identity (malecount);
+Run;
+
+*had to remove first value for this to work but then returned in;
+*square root;
+
+data transregfreq3;
+	set regfreqmod;
+	rootproportion=(proportion)**(1/2);
+
+proc reg data=transregfreq3 plots=predictions(x=year);
+	model rootproportion=year;
+	output out=repregmodel3 predicted=rootproportionhat;
+	run;
+
+data untransformroot;
+	set repregmodel3;
+	proportionhat=exp(rootproportionhat);
+run;
+
+proc print data=untransformroot;
+run;
