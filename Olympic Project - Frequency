@@ -1,0 +1,395 @@
+/*Import Step*/
+
+proc import out= projectdata 
+datafile= "/home/u59309073/sasuser.v94/Project Data.csv"
+DBMS=csv
+replace;
+getnames=YES;
+run;
+
+
+data project2;
+set projectdata;
+heightnum = input(height,4.);
+weightnum = input(weight,4.);
+*num to char = put(x,8.);
+run;
+
+
+data project3;
+set project2;
+if heightnum="" then DELETE;
+if weightnum="" then DELETE;
+if weightnum<37.5 and sex="F" then delete; *done with iqr outlier test for males and females;
+if weightnum>81.5 and sex="F" then delete;
+if weightnum>104.5 and sex="M" then delete;
+if weightnum<50.5 and sex="M" then delete;
+run;
+
+
+
+
+*creating the overall frequencies and decidied to subset or not;
+
+proc sort data=project2 out=regionsdata nodupkey;
+	by NOC;
+run;
+
+data newmed;
+set project2;
+if medal="NA" then delete; 
+run;
+
+
+proc sort data=newmed;
+by sex;
+run;
+
+proc freq data=newmed order=FREQ;
+tables medal*NOC/norow expected;
+by sex;
+run;
+
+proc sort data=project2;
+by sex;
+run;
+
+*first step;
+/* proc freq data=project2 order=FREQ; */
+/* tables medal*NOC/norow expected; */
+/* run; */
+
+
+proc freq data=newmed order=FREQ;
+tables medal*NOC/norow expected;
+run;
+
+
+*2nd step;
+
+proc sort data=newmed;
+by sex;
+run;
+
+proc sort data=project2;
+by sex;
+run;
+
+proc freq data=newmed;
+tables medal*NOC/norow nopercent deviation expected;
+where  NOC="USA" or NOC="FRA" or NOC="GBR"  or NOC="GER" or NOC="URS";
+run;
+
+proc freq data=newmed;
+tables medal*NOC/norow nopercent deviation expected;
+by sex;
+where  NOC="USA" or NOC="FRA" or NOC="GBR"  or NOC="GER" or NOC="URS";
+run;
+
+/* proc freq data=project2; */
+/* tables medal*NOC/norow nopercent deviation expected; */
+/* where  NOC="USA" or NOC="FRA" or NOC="GBR" or NOC="ITA" or NOC="GER" or NOC="URS"; */
+/* run; */
+
+/* proc freq data=project2; */
+/* tables medal*NOC/norow nocol deviation expected; */
+/* by sex; */
+/* where  NOC="USA" or NOC="FRA" or NOC="GBR" or NOC="ITA" or NOC="GER" or NOC="URS"; */
+/* run; */
+
+
+
+
+
+*USA 1;
+
+*3rd step for USA;
+data workfreqUSA;
+input sex$  medal$ count;
+datalines;
+F Gold 852 
+F Silver 534
+F Bronze 419
+M Gold 1786 
+M Silver 1107
+M Bronze 939
+;
+
+proc freq data=workfreqUSA;
+tables medal*sex/expected deviation chisq relrisk nopercent;
+weight count;
+run;
+*Chi square says there is no association between the sex and type of medal won
+when country is uSA;
+
+*4th step looking at the estimates compared to the countries total to see how it is;
+
+*female estimates compared to USA %'s total winners so sample size is constant;
+data workfreq2USA;
+input  medal$ count;
+datalines;
+Gold 852 
+Silver 534  
+Bronze 419
+;
+
+
+proc freq data=workfreq2USA order=data;
+tables medal/chisq testp = (46.80,29.11,24.09);
+weight count;
+run;
+
+*male estimates compared to USA %'s totals winners so sample size is constant;
+data workfreq3USA;
+input  medal$ count;
+datalines;
+Gold 1786 
+Silver 1107  
+Bronze 939
+;
+
+
+proc freq data=workfreq3USA order=data;
+tables medal/chisq testp = (46.80,29.11,24.09);
+weight count;
+run;
+
+*based on results in the USA, despite men earning more metals overall, they earned  less gold and silver than the expected
+and women did in fact have higher proportions of the medals despite earning less women also had less bronze  chi square not sign at a=0.05 for both sexes;
+
+
+
+*USSR 2;
+
+*3rd step for USSR;
+data workfreqUSSR;
+input sex$  medal$ count;
+datalines;
+F Gold 310 
+F Silver 181
+F Bronze 196
+M Gold 772 
+M Silver 551
+M Bronze 493
+;
+
+proc freq data=workfreqUSSR;
+tables medal*sex/expected deviation chisq relrisk nopercent norow;
+weight count;
+run;
+*chi square of indep says there is no relationship between sex and 
+the type of medal when the country is the USSR;
+
+*female estimates compared to USSR %'s so sample size is constant;
+data workfreq2USSR;
+input  medal$ count;
+datalines;
+Gold 310 
+Silver 181  
+Bronze 196
+;
+
+
+proc freq data=workfreq2USSR order=data;
+tables medal/chisq testp = (43.23, 29.24,27.53);
+weight count;
+run;
+
+*male estimates compared to USSR %'s totals so sample size is constant;
+data workfreq3USSR;
+input  medal$ count;
+datalines;
+Gold  772
+Silver 551  
+Bronze 493
+;
+
+
+proc freq data=workfreq3USSR order=data;
+tables medal/chisq testp = (43.23, 29.24,27.53);
+weight count;
+run;
+
+*based on results in the USSR, despite men earning more metals overall, they earned  less than the expected
+and women had higher gold and bronze % with less silver, while men had less gold and bronze % and had
+more silver % chi square not sign at a=0.05 for both sexes; 
+
+
+
+
+
+*GER  3;
+
+*3rd step for GER;
+data workfreqGER;
+input sex$  medal$ count;
+datalines;
+F Gold 212
+F Silver 222
+F Bronze 241
+M Gold 533 
+M Silver 452
+M Bronze 505
+;
+
+proc freq data=workfreqGER;
+tables medal*sex/expected deviation chisq relrisk nopercent;
+weight count;
+run;
+*chi square of indep says there is no relationship between sex and 
+the type of medal when the country is the GER;
+
+*female estimates compared to GER %'s so sample size is constant;
+data workfreq2GER;
+input  medal$ count;
+datalines;
+Gold 212
+Silver 222
+Bronze 241
+;
+
+
+proc freq data=workfreq2GER order=data;
+tables medal/chisq testp = (34.41, 31.13,34.46);
+weight count;
+run;
+
+*male estimates compared to GER %'s totals so sample size is constant;
+data workfreq3GER;
+input  medal$ count;
+datalines;
+Gold 533 
+Silver 452
+Bronze 505
+;
+
+
+proc freq data=workfreq3GER order=data;
+tables medal/chisq testp = (34.41, 31.13,34.46);
+weight count;
+run;
+
+*based on results in the GER, men had more metals and had a higher gold win % than women and lower silver and bronze,
+while women had only the higher silver and bronze %, chi square not sign at a=0.05 for both sexes;
+
+
+
+
+*GBR  4;
+
+*3rd step for GBR;
+data workfreqGBR;
+input sex$  medal$ count;
+datalines;
+F Gold 99
+F Silver 131
+F Bronze 165
+M Gold 579 
+M Silver 608
+M Bronze 486
+;
+
+proc freq data=workfreqGBR;
+tables medal*sex/expected deviation chisq relrisk nopercent;
+weight count;
+run;
+*chi square of indep says there IS relationship between sex and 
+the type of medal when the country is the GBR;
+
+*female estimates compared to USSR %'s so sample size is constant;
+data workfreq2GBR;
+input  medal$ count;
+datalines;
+Gold 99
+Silver 131
+Bronze 165
+;
+
+
+proc freq data=workfreq2GBR order=data;
+tables medal/chisq testp = (32.79,35.74, 31.48) ;
+weight count;
+run;
+
+*male estimates compared to USSR %'s totals so sample size is constant;
+data workfreq3GBR;
+input  medal$ count;
+datalines;
+Gold 579 
+Silver 608
+Bronze 486
+;
+
+
+proc freq data=workfreq3GBR order=data;
+tables medal/chisq testp =(32.79,35.74, 31.48) ;
+weight count;
+run;
+
+*based on results in the GBR, men held more % gold and silver medals than women
+while women held more bronze, also chi square was sign at a=0.05 for women but not men
+meaning that womens data deviated from expected significantly, most suspect is the 
+difference in the expected gold and bronze% for women with too little gold and too
+high bronze;
+
+
+
+
+
+*FRA  5;
+
+*3rd step for FRA;
+data workfreqFRA;
+input sex$  medal$ count;
+datalines;
+F Gold 55 
+F Silver 87
+F Bronze 86
+M Gold 446 
+M Silver 523
+M Bronze 580
+;
+
+proc freq data=workfreqFRA;
+tables medal*sex/expected deviation chisq relrisk nopercent;
+weight count;
+run;
+*chi square of indep says there is no relationship between sex and 
+the type of medal when the country is the FRA;
+
+*female estimates compared to USSR %'s so sample size is constant;
+data workfreq2FRA;
+input  medal$ count;
+datalines;
+Gold 55 
+Silver 87
+Bronze 86
+;
+
+
+proc freq data=workfreq2FRA order=data;
+tables medal/chisq testp = (28.19, 34.33, 37.48);
+weight count;
+run;
+
+*male estimates compared to USSR %'s totals so sample size is constant;
+data workfreq3FRA;
+input  medal$ count;
+datalines;
+Gold 446 
+Silver 523
+Bronze 580
+;
+
+
+proc freq data=workfreq3FRA order=data;
+tables medal/chisq testp = (28.19, 34.33, 37.48);
+weight count;
+run;
+
+*based on results in the FRA, men held more metals overall, and had a higher gold win% than women
+while women had a higher silver % and bronze% than men with bronze only slightly larger, chi
+squared not sign at a=0.05 ;
+
+
+
