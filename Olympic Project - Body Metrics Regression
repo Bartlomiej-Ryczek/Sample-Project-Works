@@ -1,0 +1,80 @@
+/*Import Step*/
+
+proc import out= projectdata 
+datafile= "/home/u59309073/sasuser.v94/Project Data.csv"
+DBMS=csv
+replace;
+getnames=YES;
+run;
+
+data project2;
+set projectdata;
+heightnum = input(height,4.);
+weightnum = input(weight,4.);
+*num to char = put(x,8.);
+run;
+proc contents data=project2;
+run;
+
+data project3;
+set project2;
+if heightnum="" then DELETE;
+if weightnum="" then DELETE;
+if weightnum<37.5 and sex="F" then delete; *done with iqr outlier test for males and females;
+if weightnum>81.5 and sex="F" then delete;
+if weightnum>104.5 and sex="M" then delete;
+if weightnum<50.5 and sex="M" then delete;
+run;
+
+
+
+proc corr data=project3 plots=matrix plots(MAXPOINTS=50000000);
+var weightnum heightnum;
+run;
+
+proc sort data=project3;
+by sex;
+run;
+
+proc corr data=project3 plots=matrix plots(MAXPOINTS=50000000);
+var weightnum heightnum;
+by sex;
+run;
+
+
+ods graphics on;
+proc reg data=project2 plots=predictions(x = heightnum)plots(MAXPOINTS=50000000);
+model weightnum = heightnum age;
+by sex;
+run;
+	
+
+
+ods graphics on;
+proc reg data=project3 plots=predictions(x = heightnum)plots(MAXPOINTS=50000000);
+model weightnum = heightnum;
+by sex;
+run;
+
+
+data projectxtran;
+set project3;
+heightnum2=heightnum/6;
+run;
+
+
+
+ods graphics on;
+proc reg data=projectxtran plots=predictions(x = heightnum2)plots(MAXPOINTS=50000000);
+model weightnum = heightnum2;
+by sex;
+run;
+
+
+Proc Transreg data = projectsport;
+Model boxcox(weightnum) = identity (heightnum);
+Run;
+
+
+
+
